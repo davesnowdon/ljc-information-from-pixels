@@ -1,7 +1,16 @@
 apply plugin: 'java'
 
 repositories {
+    /*
+     * We need the local repo to obtain the java and native OpenCV jars (assumes that OpenCV has
+     * been built and installed for the local architecture - see build-opencv.sh for Linux build)
+     */
     mavenLocal()
+    // For everything we depend on except for OpenCV
     mavenCentral()
 }
 
+dependencies {
+    compile group: 'opencv', name: 'opencv', version: '3.1.0'
+    compile group: 'opencv', name: 'opencv-native', version: '3.1.0'
+}
