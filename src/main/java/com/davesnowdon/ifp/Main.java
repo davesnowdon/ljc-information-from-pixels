@@ -17,6 +17,7 @@ import java.awt.image.BufferedImage;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 
 /**
@@ -30,6 +31,10 @@ public class Main {
     public static final String OPTION_OUTPUT = "output";
 
     public static final String OPTION_KERNEL_SIZE = "kernel-size";
+
+    public static final String OPTION_LOW = "low";
+
+    public static final String OPTION_HIGH = "high";
 
     public static final Scalar RED = new Scalar(255.0, 0.0, 0.0);
 
@@ -47,6 +52,8 @@ public class Main {
         options.addOption("i", OPTION_IMAGE, true, "Input image filename");
         options.addOption("o", OPTION_OUTPUT, true, "Output image filename");
         options.addOption("k", OPTION_KERNEL_SIZE, true, "Kernel size");
+        options.addOption("l", OPTION_LOW, true, "Comma separated triple for low end of range");
+        options.addOption("h", OPTION_HIGH, true, "Comma separated triple for high end of range");
 
         CommandLineParser parser = new DefaultParser();
         try {
@@ -129,7 +136,29 @@ public class Main {
     }
 
     public static Mat commandFindBlob(Mat image, CommandLine line) throws ParseException {
-        return null;
+        if (!line.hasOption(OPTION_LOW) || !line.hasOption(OPTION_HIGH)) {
+            throw new ParseException("Need to specify both low and high for range operations");
+        }
+        final String[] lows = line.getOptionValue(OPTION_LOW).split(",");
+        if (3 != lows.length) {
+            throw new ParseException("Low values should be <H>,<S>,<V>");
+        }
+        Scalar low = new Scalar(Double.valueOf(lows[0]), Double.valueOf(lows[1]), Double.valueOf(lows[2]));
+
+        final String[] highs = line.getOptionValue(OPTION_HIGH).split(",");
+        if (3 != highs.length) {
+            throw new ParseException("High values should be <H>,<S>,<V>");
+        }
+        Scalar high = new Scalar(Double.valueOf(highs[0]), Double.valueOf(highs[1]), Double.valueOf(highs[2]));
+
+        Optional<Blob> maybeBlob = ImageOps.findBlob(image, low, high);
+        if (maybeBlob.isPresent()) {
+            Imgproc.circle(image, maybeBlob.get().getEnclosedBy().getCentre(), 5, BLUE, 2);
+            Imgproc.drawContours(image, Arrays.asList(maybeBlob.get().getContour()), 0, GREEN, 2);
+            return image;
+        } else {
+            return null;
+        }
     }
 
     public static Mat commandBlur(Mat image, CommandLine line) throws ParseException {

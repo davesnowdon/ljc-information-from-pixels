@@ -196,9 +196,9 @@ public class ImageOps {
      * @param low
      * @param high
      */
-    public static Mat rangeMask(Mat image, int low, int high) {
+    public static Mat rangeMask(Mat image, Scalar low, Scalar high) {
         final Mat result = new Mat(image.rows(), image.cols(), CvType.CV_8UC3);
-        Core.inRange(image, new Scalar(low), new Scalar(high), result);
+        Core.inRange(image, low, high, result);
         return result;
     }
 
@@ -211,7 +211,7 @@ public class ImageOps {
      * @param high
      * @return
      */
-    public static Mat hsvMask(Mat image, int low, int high) {
+    public static Mat hsvMask(Mat image, Scalar low, Scalar high) {
         Mat result = gaussianBlur(image, 11);
         result = toHsv(result);
         result = rangeMask(result, low, high);
@@ -355,7 +355,7 @@ public class ImageOps {
      * @param high
      * @return
      */
-    public static Optional<Blob> findBlob(Mat image, int low, int high) {
+    public static Optional<Blob> findBlob(Mat image, Scalar low, Scalar high) {
         final Mat mask = hsvMask(image, low, high);
         MatOfPoint contour = largestContour(findContours(mask));
         if (null != contour) {
