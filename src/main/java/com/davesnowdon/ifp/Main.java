@@ -29,6 +29,8 @@ public class Main {
 
     public static final String OPTION_OUTPUT = "output";
 
+    public static final String OPTION_KERNEL_SIZE = "kernel-size";
+
     public static final Scalar RED = new Scalar(255.0, 0.0, 0.0);
 
     public static final Scalar GREEN = new Scalar(0.0, 255.0, 0.0);
@@ -44,6 +46,7 @@ public class Main {
         options.addOption("c", OPTION_COMMAND, true, "Command to run, one of: " + commands);
         options.addOption("i", OPTION_IMAGE, true, "Input image filename");
         options.addOption("o", OPTION_OUTPUT, true, "Output image filename");
+        options.addOption("k", OPTION_KERNEL_SIZE, true, "Kernel size");
 
         CommandLineParser parser = new DefaultParser();
         try {
@@ -66,22 +69,33 @@ public class Main {
 
             Mat image = ImageOps.readImage(imageFilename);
 
+            Mat output = null;
             switch (command) {
                 case "show":
-                    commandShow(image, line);
+                    output = commandShow(image, line);
                     break;
 
                 case "find-faces":
-                    commandFindFaces(image, line);
+                    output = commandFindFaces(image, line);
                     break;
 
                 case "find-blob":
-                    commandFindBlob(image, line);
+                    output = commandFindBlob(image, line);
                     break;
 
                 case "blur":
-                    commandBlur(image, line);
+                    output = commandBlur(image, line);
                     break;
+            }
+
+            if (null != output) {
+                if (line.hasOption(OPTION_OUTPUT)) {
+                    final String outputFilename = line.getOptionValue(OPTION_OUTPUT);
+                    ImageOps.writeImage(outputFilename, output);
+                }
+
+                BufferedImage javaImage = Util.matrixToImage(output);
+                Util.displayImage(command, javaImage);
             }
 
         } catch (ParseException e) {
@@ -94,38 +108,40 @@ public class Main {
     /**
      * Demo reading an image using OpenCv, converting it to a java image and displaying it using Swing
      */
-    public static void commandShow(Mat image, CommandLine line) {
-        BufferedImage javaImage = Util.matrixToImage(image);
-        Util.displayImage("demo", javaImage);
+    public static Mat commandShow(Mat image, CommandLine line) {
+        return image;
     }
 
     /**
      * Read an image and locate any faces
      */
-    public static void commandFindFaces(Mat image, CommandLine line) {
+    public static Mat commandFindFaces(Mat image, CommandLine line) {
         final Mat gray = ImageOps.toGrayscale(image);
         final CascadeClassifier faceClassifier = new CascadeClassifier(FACE_XML);
         List<Rect> faces = ImageOps.applyClassifier(faceClassifier, gray);
-        System.out.println(Integer.toString(faces.size())+ " faces found");
+        System.out.println(Integer.toString(faces.size()) + " faces found");
 
         for (Rect face : faces) {
             Imgproc.rectangle(image, ImageOps.minPoint(face), ImageOps.maxPoint(face), BLUE, 2);
         }
 
-        if (line.hasOption(OPTION_OUTPUT)) {
-            final String outputFilename = line.getOptionValue(OPTION_OUTPUT);
-            ImageOps.writeImage(outputFilename, image);
+        return image;
+    }
+
+    public static Mat commandFindBlob(Mat image, CommandLine line) throws ParseException {
+        return null;
+    }
+
+    public static Mat commandBlur(Mat image, CommandLine line) throws ParseException {
+        int kernelSize = 3;
+        if (line.hasOption(OPTION_KERNEL_SIZE)) {
+            kernelSize = Integer.parseInt(line.getOptionValue(OPTION_KERNEL_SIZE));
         }
 
-        BufferedImage javaImage = Util.matrixToImage(image);
-        Util.displayImage("Faces", javaImage);
-    }
+        if ((kernelSize % 2) == 0) {
+            throw new ParseException("Kernel size must be an odd number");
+        }
 
-    public static void commandFindBlob(Mat image, CommandLine line) {
-
-    }
-
-    public static void commandBlur(Mat image, CommandLine line) {
-
+        return ImageOps.gaussianBlur(image, kernelSize);
     }
 }

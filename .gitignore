@@ -5,5 +5,7 @@
 .project
 .settings
 /bin
-/run.sh
 out.jpg
+/find-faces.sh
+/find-blob.sh
+/blur.sh
