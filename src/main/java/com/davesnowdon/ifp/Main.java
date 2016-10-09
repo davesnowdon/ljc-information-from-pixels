@@ -27,6 +27,8 @@ public class Main {
 
     public static final String OPTION_IMAGE = "image";
 
+    public static final String OPTION_OUTPUT = "output";
+
     public static final Scalar RED = new Scalar(255.0, 0.0, 0.0);
 
     public static final Scalar GREEN = new Scalar(0.0, 255.0, 0.0);
@@ -41,6 +43,7 @@ public class Main {
         Options options = new Options();
         options.addOption("c", OPTION_COMMAND, true, "Command to run, one of: " + commands);
         options.addOption("i", OPTION_IMAGE, true, "Input image filename");
+        options.addOption("o", OPTION_OUTPUT, true, "Output image filename");
 
         CommandLineParser parser = new DefaultParser();
         try {
@@ -107,6 +110,11 @@ public class Main {
 
         for (Rect face : faces) {
             Imgproc.rectangle(image, ImageOps.minPoint(face), ImageOps.maxPoint(face), BLUE, 2);
+        }
+
+        if (line.hasOption(OPTION_OUTPUT)) {
+            final String outputFilename = line.getOptionValue(OPTION_OUTPUT);
+            ImageOps.writeImage(outputFilename, image);
         }
 
         BufferedImage javaImage = Util.matrixToImage(image);
