@@ -7,5 +7,7 @@
 /bin
 out.jpg
 /find-faces.sh
+/find-nao.sh
 /find-blob.sh
 /blur.sh
+/image-with-nao.jpg

@@ -36,6 +36,8 @@ public class Main {
 
     public static final String OPTION_HIGH = "high";
 
+    public static final String OPTION_CLASSIFIER = "classifier";
+
     public static final Scalar RED = new Scalar(255.0, 0.0, 0.0);
 
     public static final Scalar GREEN = new Scalar(0.0, 255.0, 0.0);
@@ -44,7 +46,7 @@ public class Main {
 
     public static final String FACE_XML = "src/main/resources/haarcascade_frontalface_default.xml";
 
-    static Set<String> commands = new HashSet<>(Arrays.asList("show", "find-blob", "find-faces", "blur"));
+    static Set<String> commands = new HashSet<>(Arrays.asList("classifier", "show", "find-blob", "find-faces", "blur"));
 
     public static void main(String[] argv) {
         Options options = new Options();
@@ -54,6 +56,7 @@ public class Main {
         options.addOption("k", OPTION_KERNEL_SIZE, true, "Kernel size");
         options.addOption("l", OPTION_LOW, true, "Comma separated triple for low end of range");
         options.addOption("h", OPTION_HIGH, true, "Comma separated triple for high end of range");
+        options.addOption("d", OPTION_CLASSIFIER, true, "XML file to use as classifier");
 
         CommandLineParser parser = new DefaultParser();
         try {
@@ -78,20 +81,24 @@ public class Main {
 
             Mat output = null;
             switch (command) {
-                case "show":
-                    output = commandShow(image, line);
+                case "blur":
+                    output = commandBlur(image, line);
                     break;
 
-                case "find-faces":
-                    output = commandFindFaces(image, line);
+                case "classifier":
+                    output = commandApplyClassifier(image, line);
                     break;
 
                 case "find-blob":
                     output = commandFindBlob(image, line);
                     break;
 
-                case "blur":
-                    output = commandBlur(image, line);
+                case "find-faces":
+                    output = commandFindFaces(image, line);
+                    break;
+
+                case "show":
+                    output = commandShow(image, line);
                     break;
             }
 
@@ -120,13 +127,31 @@ public class Main {
     }
 
     /**
+     * Apply the specified classifier against the supplied image
+     * @param image
+     * @param line
+     * @return
+     */
+    private static Mat commandApplyClassifier(Mat image, CommandLine line) throws ParseException {
+        if (!line.hasOption(OPTION_CLASSIFIER)) {
+            throw new ParseException("Need to specify classifier filename");
+        }
+        String classifierFilename = line.getOptionValue(OPTION_CLASSIFIER);
+        return applyClassifier(image, classifierFilename);
+    }
+
+    /**
      * Read an image and locate any faces
      */
-    public static Mat commandFindFaces(Mat image, CommandLine line) {
+    public static Mat commandFindFaces(Mat image, CommandLine line) throws ParseException {
+        return applyClassifier(image, FACE_XML);
+    }
+
+    private static Mat applyClassifier(Mat image, String classifierFilename) throws ParseException {
         final Mat gray = ImageOps.toGrayscale(image);
-        final CascadeClassifier faceClassifier = new CascadeClassifier(FACE_XML);
+        final CascadeClassifier faceClassifier = new CascadeClassifier(classifierFilename);
         List<Rect> faces = ImageOps.applyClassifier(faceClassifier, gray);
-        System.out.println(Integer.toString(faces.size()) + " faces found");
+        System.out.println(Integer.toString(faces.size()) + " objects found");
 
         for (Rect face : faces) {
             Imgproc.rectangle(image, ImageOps.minPoint(face), ImageOps.maxPoint(face), BLUE, 2);
