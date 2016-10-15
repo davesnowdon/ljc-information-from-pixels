@@ -4,6 +4,7 @@ import java.awt.*;
 import java.awt.image.BufferedImage;
 
 import org.opencv.core.Mat;
+import org.opencv.imgproc.Imgproc;
 
 import javax.swing.*;
 
@@ -23,6 +24,14 @@ public class Util {
         final int type = (3 == depth) ? BufferedImage.TYPE_3BYTE_BGR : BufferedImage.TYPE_BYTE_GRAY;
         final byte[] bytes = new byte[width * height * depth];
         final BufferedImage image = new BufferedImage(width, height, type);
+
+        // OpenCV colour images are in BGR format, need to convert to RGB
+        if (3 == depth) {
+            Mat tmp = ImageOps.resultMatrix(mat);
+            Imgproc.cvtColor(mat, tmp, Imgproc.COLOR_BGR2RGB);
+            mat = tmp;
+        }
+
         mat.get(0, 0, bytes);
         image.getRaster().setDataElements(0, 0, width, height, bytes);
         return image;
