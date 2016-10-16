@@ -15,11 +15,16 @@ For brevity, the command line below assume that the java classpath already conta
 
     # Find faces
     java com.davesnowdon.ifp.Main --command find-faces --image <INPUT IMAGE> --output <OUTPUT IMAGE>
-
+    
+    # Apply arbitrary classifier
+    java com.davesnowdon.ifp.Main --command classifier --classifier <CLASSIFIER XML FILE> --image <INPUT IMAGE> --output <OUTPUT IMAGE>
 
     # Find blob specified using HSV range
     java com.davesnowdon.ifp.Main --command find-blob --image src/test/resources/contains-blue-blob.jpg --low 84,80,80 --high 104,255,255 --output out.jpg
 
-
     # Blur image
     java com.davesnowdon.ifp.Main --command blur --image <INPUT IMAGE> --kernel-size $1 --output <OUTPUT IMAGE>
+    
+    # Find quadrilateral in image
+    java com.davesnowdon.ifp.Main --command shapes --image src/test/resources/money.jpg --output <OUTPUT IMAGE>
+    

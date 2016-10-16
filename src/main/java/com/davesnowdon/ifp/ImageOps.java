@@ -17,6 +17,7 @@ import org.opencv.imgproc.Imgproc;
 import org.opencv.objdetect.CascadeClassifier;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 
@@ -188,6 +189,12 @@ public class ImageOps {
         return dilate(image, 3, 1);
     }
 
+    public static Mat adaptiveThreshold(Mat image) {
+        Mat thresh = ImageOps.resultMatrix(image);
+        Imgproc.adaptiveThreshold(image, thresh, 255, Imgproc.ADAPTIVE_THRESH_MEAN_C, Imgproc.THRESH_BINARY_INV, 25, 15);
+        return thresh;
+    }
+
 
     /**
      * Return a mask representing the pixels within the specified range
@@ -320,7 +327,13 @@ public class ImageOps {
         return contours.stream()
                 .max((c1, c2) -> (Imgproc.contourArea(c1) > Imgproc.contourArea(c2) ? 1 : -1))
                 .get();
+    }
 
+    public static List<MatOfPoint> sortContours(List<MatOfPoint> contours) {
+        List<MatOfPoint> result = new ArrayList<>(contours);
+        // Return largest first
+        Collections.sort(result, (c1, c2) -> (Imgproc.contourArea(c1) > Imgproc.contourArea(c2) ? -1 : 1));
+        return contours;
     }
 
     /**

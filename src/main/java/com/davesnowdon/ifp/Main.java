@@ -8,6 +8,9 @@ import org.apache.commons.cli.Options;
 import org.apache.commons.cli.ParseException;
 import org.opencv.core.Core;
 import org.opencv.core.Mat;
+import org.opencv.core.MatOfPoint;
+import org.opencv.core.MatOfPoint2f;
+import org.opencv.core.Point;
 import org.opencv.core.Rect;
 import org.opencv.core.Scalar;
 import org.opencv.imgproc.Imgproc;
@@ -46,7 +49,7 @@ public class Main {
 
     public static final String FACE_XML = "src/main/resources/haarcascade_frontalface_default.xml";
 
-    static Set<String> commands = new HashSet<>(Arrays.asList("classifier", "show", "find-blob", "find-faces", "blur"));
+    static Set<String> commands = new HashSet<>(Arrays.asList("classifier", "show", "find-blob", "find-faces", "blur", "shapes"));
 
     public static void main(String[] argv) {
         Options options = new Options();
@@ -97,6 +100,10 @@ public class Main {
                     output = commandFindFaces(image, line);
                     break;
 
+                case "shapes":
+                    output = commandShapes(image, line);
+                    break;
+
                 case "show":
                     output = commandShow(image, line);
                     break;
@@ -128,6 +135,7 @@ public class Main {
 
     /**
      * Apply the specified classifier against the supplied image
+     *
      * @param image
      * @param line
      * @return
@@ -197,5 +205,39 @@ public class Main {
         }
 
         return ImageOps.gaussianBlur(image, kernelSize);
+    }
+
+    public static Mat commandShapes(Mat image, CommandLine line) {
+        Mat gray = ImageOps.toGrayscale(image);
+        Mat blurred = ImageOps.gaussianBlur(gray, 5);
+        Mat edges = ImageOps.resultMatrix(blurred);
+        Imgproc.Canny(blurred, edges, 75, 200);
+        List<MatOfPoint> contours = ImageOps.sortContours(ImageOps.findContours(edges));
+
+        System.out.println("num contours = " + contours.size());
+
+        // Start at largest contour and look for 4-sided shapes
+        for (MatOfPoint contour : contours) {
+            final MatOfPoint2f m2f = new MatOfPoint2f();
+            // need to convert the contour from a MatOfPoint to MatOfPoint2f
+            m2f.fromList(contour.toList());
+
+            /*
+             * Produce an approximation of the polygon so that edges that are not-quite straight lines
+             * get approximated to a straight line.
+             */
+            double perimeter = Imgproc.arcLength(m2f, true);
+            MatOfPoint2f approx = new MatOfPoint2f();
+            Imgproc.approxPolyDP(m2f, approx, 0.01 * perimeter, true);
+
+            int numSides = approx.toList().size();
+            if (4 == numSides) {
+                Rect r = Imgproc.boundingRect(contour);
+                Imgproc.drawContours(image, Arrays.asList(contour), -1, GREEN, 2);
+                Imgproc.putText(image, Integer.toString(numSides), new Point(r.x, r.y - 10), 0, 0.5, GREEN, 2);
+                break;
+            }
+        }
+        return image;
     }
 }

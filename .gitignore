@@ -9,5 +9,6 @@ out.jpg
 /find-faces.sh
 /find-nao.sh
 /find-blob.sh
+/find-shapes.sh
 /blur.sh
 /image-with-nao.jpg
