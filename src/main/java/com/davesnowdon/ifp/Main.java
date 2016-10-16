@@ -250,6 +250,16 @@ public class Main {
         return image;
     }
 
+    /**
+     * Detect a line in an image, Return [offset, orientation] or nil, if no
+     line detected.  offset: rough position of the line on screen [-1,
+     +1] (-1: on the extreme left, 1: on the extreme right, 0: centered)
+     orientation: its orientation [-pi/2,pi/2] Adapted from the python
+     implementation by Alexandre Mazel, https://youtu.be/UGj3H6ETHJg"
+     * @param image
+     * @param line
+     * @return
+     */
     public static Mat commandFindVerticalLine(Mat image, CommandLine line) {
         Mat gray = ImageOps.toGrayscale(image);
         writeIntermediateOutput(gray, "-1-gray", line);
