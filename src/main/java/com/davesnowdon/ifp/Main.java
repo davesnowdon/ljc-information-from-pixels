@@ -43,6 +43,8 @@ public class Main {
 
     public static final String OPTION_CLASSIFIER = "classifier";
 
+    public static final String OPTION_INTERMEDIATE = "intermediate";
+
     public static final Scalar OUTLINE_COLOUR = new Scalar(0.0, 255.0, 0.0);
 
     public static final Scalar CENTRE_COLOUR = new Scalar(255.0, 0.0, 0.0);
@@ -60,6 +62,7 @@ public class Main {
         options.addOption("l", OPTION_LOW, true, "Comma separated triple for low end of range");
         options.addOption("h", OPTION_HIGH, true, "Comma separated triple for high end of range");
         options.addOption("d", OPTION_CLASSIFIER, true, "XML file to use as classifier");
+        options.addOption("v", OPTION_INTERMEDIATE, false, "Write intermediate images to file");
 
         CommandLineParser parser = new DefaultParser();
         try {
@@ -116,6 +119,7 @@ public class Main {
             if (null != output) {
                 if (line.hasOption(OPTION_OUTPUT)) {
                     final String outputFilename = line.getOptionValue(OPTION_OUTPUT);
+                    System.out.println("Writing output image: "+outputFilename);
                     ImageOps.writeImage(outputFilename, output);
                 }
 
@@ -248,6 +252,7 @@ public class Main {
 
     public static Mat commandFindVerticalLine(Mat image, CommandLine line) {
         Mat gray = ImageOps.toGrayscale(image);
+        writeIntermediateOutput(gray, "-1-gray", line);
 
         // Make a kernel to detect vertical lines
         Mat kernel = new Mat(1, 3, CvType.CV_64F);
@@ -257,10 +262,12 @@ public class Main {
         // convolve grayscale image with kernel
         Mat convolved = ImageOps.resultMatrix(gray);
         Imgproc.filter2D(gray, convolved, -1, kernel);
+        writeIntermediateOutput(convolved, "-2-convolved", line);
 
         // threshold result
         Mat thresh = ImageOps.resultMatrix(gray);
         Imgproc.threshold(convolved, thresh, 45.0, 255, Imgproc.THRESH_TOZERO);
+        writeIntermediateOutput(thresh, "-3-thresh", line);
 
         // Get the X position of the highest value pixel in each row
         int[] positions = ImageOps.argMaxRow(thresh);
@@ -317,5 +324,22 @@ public class Main {
 
 
         return image;
+    }
+
+    private static void writeIntermediateOutput(Mat image, String suffix, CommandLine line) {
+        boolean saveIntermediate = line.hasOption(OPTION_INTERMEDIATE) && line.hasOption(OPTION_OUTPUT);
+        if (!saveIntermediate) {
+            return;
+        }
+
+        String baseOutputFile = line.getOptionValue(OPTION_OUTPUT);
+
+        int dot = baseOutputFile.lastIndexOf('.');
+        String base = (dot == -1) ? baseOutputFile : baseOutputFile.substring(0, dot);
+        String extension = (dot == -1) ? "jpg" : baseOutputFile.substring(dot+1);
+
+        String filename = base + suffix + "." + extension;
+        System.out.println("Writing intermediate image: "+filename);
+        ImageOps.writeImage(filename, image);
     }
 }
