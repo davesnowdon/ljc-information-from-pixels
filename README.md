@@ -28,3 +28,6 @@ For brevity, the command line below assume that the java classpath already conta
     # Find quadrilateral in image
     java com.davesnowdon.ifp.Main --command shapes --image src/test/resources/money.jpg --output <OUTPUT IMAGE>
     
+    # Find vertical line
+    java com.davesnowdon.ifp.Main --command find-line --image src/test/resources/image-with-line.jpg --output <OUTPUT IMAGE>
+        
