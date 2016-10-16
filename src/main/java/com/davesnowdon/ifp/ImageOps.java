@@ -17,9 +17,11 @@ import org.opencv.imgproc.Imgproc;
 import org.opencv.objdetect.CascadeClassifier;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.IntStream;
 
 /**
  * Useful operations on images represented as OpenCV matrices
@@ -276,11 +278,55 @@ public class ImageOps {
      * Returns the corner of a rectangle with the smallest x & y values
      *
      * @param rect
-     * @return
      */
     public static Point minPoint(Rect rect) {
         return new Point(rect.x, rect.y);
     }
+
+    /**
+     * Return a column from a gray scale image
+     * @param gray
+     * @param  col
+     */
+    public static int[] getCol(Mat gray, int col) {
+        byte[] cell = new byte[1];
+        int[] result = new int[gray.rows()];
+        for (int i=0; i<gray.rows(); ++i) {
+            gray.get(i, col, cell);
+            result[i] = Byte.toUnsignedInt(cell[0]);
+        }
+        return result;
+    }
+
+    /**
+     * Return a row from a gray scale image
+     * @param gray
+     * @param row
+     * @return
+     */
+    public static int[] getRow(Mat gray, int row) {
+        byte[] cell = new byte[1];
+        int[] result = new int[gray.cols()];
+        for (int i=0; i<gray.cols(); ++i) {
+            gray.get(row, i, cell);
+            result[i] = Byte.toUnsignedInt(cell[0]);
+        }
+        return result;
+    }
+
+    /**
+     * For each row in the image return the index of the highest value
+     * @param gray
+     */
+    public static int[] argMaxRow(Mat gray) {
+        int[] result = new int[gray.rows()];
+        for (int r=0; r<gray.rows(); ++r) {
+            int[] row = getRow(gray, r);
+            result[r] = IntStream.range(0, row.length-1).reduce((a,b) -> row[a]<row[b]? b: a).getAsInt();
+        }
+        return result;
+    }
+
 
     /**
      * Returns the corner of a rectangle with the largest x & y values

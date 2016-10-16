@@ -7,6 +7,7 @@ import org.apache.commons.cli.HelpFormatter;
 import org.apache.commons.cli.Options;
 import org.apache.commons.cli.ParseException;
 import org.opencv.core.Core;
+import org.opencv.core.CvType;
 import org.opencv.core.Mat;
 import org.opencv.core.MatOfPoint;
 import org.opencv.core.MatOfPoint2f;
@@ -22,6 +23,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
+import java.util.stream.IntStream;
 
 /**
  * Launcher for OpenCV demos for "Information from Pixels" talk
@@ -40,14 +42,14 @@ public class Main {
     public static final String OPTION_HIGH = "high";
 
     public static final String OPTION_CLASSIFIER = "classifier";
-    
+
     public static final Scalar OUTLINE_COLOUR = new Scalar(0.0, 255.0, 0.0);
 
     public static final Scalar CENTRE_COLOUR = new Scalar(255.0, 0.0, 0.0);
 
     public static final String FACE_XML = "src/main/resources/haarcascade_frontalface_default.xml";
 
-    static Set<String> commands = new HashSet<>(Arrays.asList("classifier", "show", "find-blob", "find-faces", "blur", "shapes"));
+    static Set<String> commands = new HashSet<>(Arrays.asList("classifier", "show", "find-blob", "find-faces", "find-line", "blur", "shapes"));
 
     public static void main(String[] argv) {
         Options options = new Options();
@@ -98,6 +100,10 @@ public class Main {
                     output = commandFindFaces(image, line);
                     break;
 
+                case "find-line":
+                    output = commandFindVerticalLine(image, line);
+                    break;
+
                 case "shapes":
                     output = commandShapes(image, line);
                     break;
@@ -123,6 +129,7 @@ public class Main {
             formatter.printHelp("demo", options);
         }
     }
+
 
     /**
      * Demo reading an image using OpenCv, converting it to a java image and displaying it using Swing
@@ -236,6 +243,79 @@ public class Main {
                 break;
             }
         }
+        return image;
+    }
+
+    public static Mat commandFindVerticalLine(Mat image, CommandLine line) {
+        Mat gray = ImageOps.toGrayscale(image);
+
+        // Make a kernel to detect vertical lines
+        Mat kernel = new Mat(1, 3, CvType.CV_64F);
+        double[] kernel_values = {-1.0, 2.0, -1.0};
+        kernel.put(0, 0, kernel_values);
+
+        // convolve grayscale image with kernel
+        Mat convolved = ImageOps.resultMatrix(gray);
+        Imgproc.filter2D(gray, convolved, -1, kernel);
+
+        // threshold result
+        Mat thresh = ImageOps.resultMatrix(gray);
+        Imgproc.threshold(convolved, thresh, 45.0, 255, Imgproc.THRESH_TOZERO);
+
+        // Get the X position of the highest value pixel in each row
+        int[] positions = ImageOps.argMaxRow(thresh);
+        System.out.println("Row argmax ="+Arrays.toString(positions));
+
+        // find rows with line segments
+        int[] nonZeroPositions = IntStream.of(positions).filter(v -> v > 0).toArray();
+
+        if (nonZeroPositions.length < 4) {
+            System.out.println("Detected line is very short");
+            return thresh;
+        }
+
+        /*
+         * Sample the X positions of the line at the top, middle and bottom of the image and
+         * use this to determine the line position and orientation
+         */
+        int firstNonZero = nonZeroPositions[0];
+        int lastNonZero = nonZeroPositions[nonZeroPositions.length-1];
+        int heightSampling = lastNonZero - firstNonZero;
+        int samplingSize = Math.max(Math.min(nonZeroPositions.length / 40, 8), 1);
+        System.out.println("Height sampling = "+heightSampling+", sampling size = "+samplingSize);
+
+        final int len = nonZeroPositions.length;
+        int[] topSamples = Arrays.copyOfRange(nonZeroPositions, 0, samplingSize);
+        int[] middleSamples = Arrays.copyOfRange(nonZeroPositions, len/2, len/2+samplingSize);
+        int[] bottomSamples = Arrays.copyOfRange(nonZeroPositions, len-samplingSize-1, len-1);
+
+        double top = IntStream.of(topSamples).average().getAsDouble();
+        double middle = IntStream.of(middleSamples).average().getAsDouble();
+        double bottom = IntStream.of(bottomSamples).average().getAsDouble();
+        System.out.println("Top = "+top+", middle = "+middle+", bottom = "+bottom);
+
+        /*
+         * Line horizontal location and orientation
+         */
+        double orientation = (top - bottom) / heightSampling;
+        double offset = (middle / image.cols()) * 2 - 1;
+        System.out.println("X offset = "+offset+", orienation = "+orientation);
+
+        /*
+         * Draw a straight line over the detected line
+         */
+        final int halfWidth = image.cols() / 2;
+        final int halfHeight = image.rows() / 2;
+        int x = halfWidth + (int) Math.round(offset * halfWidth);
+        int xOffset = (int) Math.round(Math.sin(orientation) * halfHeight);
+        System.out.println("X = "+x+", X orientation offset = "+xOffset);
+        // Line with orientation
+        Imgproc.line(image, new Point(x-xOffset, 0), new Point(x+xOffset, image.rows()-1), CENTRE_COLOUR, 2);
+
+        // Line without orientation
+        Imgproc.line(image, new Point(x, 0), new Point(x, image.rows()-1), OUTLINE_COLOUR, 2);
+
+
         return image;
     }
 }
