@@ -40,12 +40,10 @@ public class Main {
     public static final String OPTION_HIGH = "high";
 
     public static final String OPTION_CLASSIFIER = "classifier";
+    
+    public static final Scalar OUTLINE_COLOUR = new Scalar(0.0, 255.0, 0.0);
 
-    public static final Scalar RED = new Scalar(255.0, 0.0, 0.0);
-
-    public static final Scalar GREEN = new Scalar(0.0, 255.0, 0.0);
-
-    public static final Scalar BLUE = new Scalar(255.0, 0.0, 0.0);
+    public static final Scalar CENTRE_COLOUR = new Scalar(255.0, 0.0, 0.0);
 
     public static final String FACE_XML = "src/main/resources/haarcascade_frontalface_default.xml";
 
@@ -162,7 +160,7 @@ public class Main {
         System.out.println(Integer.toString(faces.size()) + " objects found");
 
         for (Rect face : faces) {
-            Imgproc.rectangle(image, ImageOps.minPoint(face), ImageOps.maxPoint(face), BLUE, 2);
+            Imgproc.rectangle(image, ImageOps.minPoint(face), ImageOps.maxPoint(face), OUTLINE_COLOUR, 2);
         }
 
         return image;
@@ -186,8 +184,8 @@ public class Main {
 
         Optional<Blob> maybeBlob = ImageOps.findBlob(image, low, high);
         if (maybeBlob.isPresent()) {
-            Imgproc.circle(image, maybeBlob.get().getEnclosedBy().getCentre(), 5, BLUE, 2);
-            Imgproc.drawContours(image, Arrays.asList(maybeBlob.get().getContour()), 0, GREEN, 2);
+            Imgproc.circle(image, maybeBlob.get().getEnclosedBy().getCentre(), 5, CENTRE_COLOUR, 2);
+            Imgproc.drawContours(image, Arrays.asList(maybeBlob.get().getContour()), 0, OUTLINE_COLOUR, 2);
             return image;
         } else {
             return null;
@@ -233,8 +231,8 @@ public class Main {
             int numSides = approx.toList().size();
             if (4 == numSides) {
                 Rect r = Imgproc.boundingRect(contour);
-                Imgproc.drawContours(image, Arrays.asList(contour), -1, GREEN, 2);
-                Imgproc.putText(image, Integer.toString(numSides), new Point(r.x, r.y - 10), 0, 0.5, GREEN, 2);
+                Imgproc.drawContours(image, Arrays.asList(contour), -1, OUTLINE_COLOUR, 2);
+                Imgproc.putText(image, Integer.toString(numSides), new Point(r.x, r.y - 10), 0, 0.5, OUTLINE_COLOUR, 2);
                 break;
             }
         }
